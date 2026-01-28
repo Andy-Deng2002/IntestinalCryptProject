@@ -1,11 +1,11 @@
 %% --- Configuration ---
-ROWS  = 4;           % Number of layers
-COLS  = 4;          % Cells per ring
+ROWS  = 2;           % Number of layers
+COLS  = 16;          % Cells per ring
 ALPHA = 10.0;        % Differentiation hierarchy strength
 Mode = 'spatial';    % Simulation mode
 
 % Lambda range (Relative Fitness Cost)
-lambda_vals = 1.5 : 0.5 : 3.5; 
+lambda_vals = 1.5 : 0.4 : 3.5; 
 
 % Monte Carlo Settings
 NUM_TRIALS = 1000;
@@ -23,7 +23,7 @@ for i = 1:length(lambda_vals)
     fprintf('Processing Lambda = %.2f ... ', lam);
     
     % --- 1. Theoretical Exact Solution ---
-    [probs_exact, ~] = TheoreticalSolver(ROWS, COLS, lam, ALPHA);
+    [probs_exact, ~] = calculateExactFixation(ROWS, COLS, lam, ALPHA);
     
     % Store exact results for all layers
     for lay = 1:ROWS

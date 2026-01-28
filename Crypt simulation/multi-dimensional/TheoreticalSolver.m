@@ -21,7 +21,7 @@ function [probs, u] = TheoreticalSolver(rows, cols, lambda, alpha)
     end
     
     % Weight(i) = alpha^i
-    layer_weights = alpha .^ (1:rows); 
+    layer_weights = alpha .^ (rows:-1:1); 
     
     % --- Generate State Space ---
     all_states = generate_states_recursive(rows, N);
@@ -55,7 +55,7 @@ function [probs, u] = TheoreticalSolver(rows, cols, lambda, alpha)
         % --- Transition Rates --- (just follow the derived expressions)
         W_tot = 0;
         for r = 1:rows
-            W_tot = W_tot + layer_weights(r) * ( (N - ns(r)) + ns(r)*(1/lambda) );
+            W_tot = W_tot + layer_weights(r) * ( (N - ns(r)) + ns(r)*(lambda) );
         end
         
         total_rate_out = 0;
@@ -65,14 +65,14 @@ function [probs, u] = TheoreticalSolver(rows, cols, lambda, alpha)
             
             % Gain (n_r -> n_r + 1)
             if ns(r) < N
-                rate_death = ( (N - ns(r)) * layer_weights(r) ) / W_tot;
+                rate_proliferate = ( ns(r) * layer_weights(r) * lambda ) / W_tot;
                 
                 prob_replace = 0;
-                if ns(r) > 0,      prob_replace = prob_replace + (k_same/deg) * (ns(r)/(N-1)); end
-                if r > 1,          prob_replace = prob_replace + (k_up/deg) * (ns(r-1)/N); end
-                if r < rows,       prob_replace = prob_replace + (k_down/deg) * (ns(r+1)/N); end
+                if ns(r) > 0,      prob_replace = prob_replace + (k_same/deg) * ((N-ns(r))/(N-1)); end
+                if r > 1,          prob_replace = prob_replace + (k_up/deg) * ((N-ns(r-1))/N); end
+                if r < rows,       prob_replace = prob_replace + (k_down/deg) * ((N-ns(r+1))/N); end
                 
-                rate_gain = rate_death * prob_replace;
+                rate_gain = rate_proliferate * prob_replace;
                 
                 if rate_gain > 0
                     ns_next = ns; ns_next(r) = ns_next(r) + 1;
@@ -86,14 +86,14 @@ function [probs, u] = TheoreticalSolver(rows, cols, lambda, alpha)
             
             % Loss (n_r -> n_r - 1)
             if ns(r) > 0
-                rate_death = ( ns(r) * layer_weights(r) * (1/lambda) ) / W_tot;
+                rate_proliferate = ( (N - ns(r)) * layer_weights(r) ) / W_tot;
                 
                 prob_replace_wt = 0;
-                if ns(r) < N,      prob_replace_wt = prob_replace_wt + (k_same/deg) * ((N-ns(r))/(N-1)); end
-                if r > 1,          prob_replace_wt = prob_replace_wt + (k_up/deg) * ((N-ns(r-1))/N); end
-                if r < rows,       prob_replace_wt = prob_replace_wt + (k_down/deg) * ((N-ns(r+1))/N); end
+                if ns(r) < N,      prob_replace_wt = prob_replace_wt + (k_same/deg) * (ns(r)/(N-1)); end
+                if r > 1,          prob_replace_wt = prob_replace_wt + (k_up/deg) * (ns(r-1)/N); end
+                if r < rows,       prob_replace_wt = prob_replace_wt + (k_down/deg) * (ns(r+1)/N); end
                 
-                rate_loss = rate_death * prob_replace_wt;
+                rate_loss = rate_proliferate * prob_replace_wt;
                 
                 if rate_loss > 0
                     ns_next = ns; ns_next(r) = ns_next(r) - 1;
