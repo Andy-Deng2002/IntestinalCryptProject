@@ -1,11 +1,11 @@
 %% --- Configuration ---
-ROWS  = 2;           % Number of layers
-COLS  = 16;          % Cells per ring
+ROWS  = 3;           % Number of layers
+COLS  = 30;          % Cells per ring
 ALPHA = 10.0;        % Differentiation hierarchy strength
 Mode = 'spatial';    % Simulation mode
 
 % Lambda range (Relative Fitness Cost)
-lambda_vals = 1.5 : 0.4 : 3.5; 
+lambda_vals = 0.4 : 0.2 : 5.0; 
 
 % Monte Carlo Settings
 NUM_TRIALS = 1000;
@@ -54,6 +54,9 @@ end
 
 %% --- Visualization ---
 figure('Color', 'w', 'Position', [100, 100, 400 * ROWS, 500]);
+N_pop = ROWS * COLS;
+moran_curve = (1 - 1./lambda_vals) ./ (1 - (1./lambda_vals).^N_pop);
+moran_curve(lambda_vals == 1) = 1 / N_pop;
 
 for lay = 1:ROWS
     subplot(1, ROWS, lay);
@@ -64,6 +67,9 @@ for lay = 1:ROWS
     
     % Plot Simulation Points
     plot(lambda_vals, results(:, lay, 2), 'ro', 'MarkerFaceColor', 'r', 'DisplayName', 'Simulation');
+    
+    % plot Moran fixation probability
+    plot(lambda_vals, moran_curve, 'k--', 'LineWidth', 1.5, 'DisplayName', 'Standard Moran');
     
     % Styling
     xlabel('Adhesion (\lambda)');
@@ -77,6 +83,6 @@ for lay = 1:ROWS
     hold off;
 end
 
-sgtitle(sprintf('Fixation Probability: Theory vs Simulation (#Row=%d, \\alpha=%.0f, mode=%s)', ROWS, ALPHA, Mode));
+sgtitle(sprintf('Fixation Probability: Theory vs Simulation (#Row=%d, #Col=%d, \\alpha=%.0f, mode=%s)', ROWS, COLS, ALPHA, Mode));
 
 drawnow;

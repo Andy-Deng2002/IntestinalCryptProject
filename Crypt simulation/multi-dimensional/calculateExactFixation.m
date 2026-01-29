@@ -1,4 +1,3 @@
-% filepath: c:\Users\xiluo\Desktop\Crypt simulation\calculate_exact_fixation.m
 function [probs, u] = calculateExactFixation(rows, cols, lambda, alpha)
 % CALCULATE_EXACT_FIXATION Solves the fixation probability for a multi-layer grid
 % using a Birth-Death process (Selection for Proliferaion).
@@ -21,8 +20,7 @@ function [probs, u] = calculateExactFixation(rows, cols, lambda, alpha)
         warning('State space is very large (%d). Calculation may use high memory.', num_states);
     end
     
-    % --- Weight Definition (Birth/Proliferation Potential) ---
-    % As per request: alpha^(N-j+1) logic mapped to rows
+    % --- Weight Definition (Proliferation Potential) ---
     % Row 1 (Bottom) gets highest weight: alpha^rows
     % Row R (Top) gets lowest weight: alpha^1
     layer_weights = alpha .^ (rows:-1:1); 
