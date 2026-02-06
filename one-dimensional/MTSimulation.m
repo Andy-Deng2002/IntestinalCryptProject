@@ -1,7 +1,7 @@
 Nreps = 10000;
 results = zeros(Nreps,2);
 numCells = 16;
-lambda = 0.5;
+lambda = 2;
 
 tic;
 parfor trial = 1:Nreps

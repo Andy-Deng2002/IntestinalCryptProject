@@ -27,24 +27,24 @@ while length(unique(cells)) > 1 && time_step < maxIter
     time_step = time_step + 1;
 
     % Set up the division distribution
-    weights = (cells == -1) * (1/lambda) + (cells ~= -1) * 1;
+    weights = (cells == -1) * (lambda) + (cells ~= -1) * 1;
     weights = max(weights, 0);
     dist = weights / sum(weights); 
     
-    % Pick a cell to be removed
-    removed_idx = randsample(N, 1, true, dist);
+    % Pick a cell to proliferate
+    proliferate_idx = randsample(N, 1, true, dist);
     
     if rand < 0.5 
-        % Left Neighbor divides
-        divider_idx = removed_idx - 1;
-        if divider_idx < 1, divider_idx = N; end
+        % occupy left neighbour
+        removed_idx = proliferate_idx - 1;
+        if removed_idx < 1, removed_idx = N; end
     else 
-        % Right Neighbor divides
-        divider_idx = removed_idx + 1;
-        if divider_idx > N, divider_idx = 1; end
+        % occupy right neighbour
+        removed_idx = proliferate_idx + 1;
+        if removed_idx > N, removed_idx = 1; end
     end
 
-    cells(removed_idx) = cells(divider_idx);
+    cells(removed_idx) = cells(proliferate_idx);
     if visualize
         history = [history; cells];
     end
