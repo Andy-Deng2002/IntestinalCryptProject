@@ -5,7 +5,7 @@ ALPHA = 10.0;        % Differentiation hierarchy strength
 Mode = 'spatial';    % Simulation mode
 
 % Lambda range (Relative Fitness Cost)
-lambda_vals = 0.4 : 0.2 : 5.0; 
+lambda_vals = 0.4 : 0.3 : 5.0; 
 
 % Monte Carlo Settings
 NUM_TRIALS = 3000; % Higher trials for better precision
@@ -28,7 +28,7 @@ for i = 1:length(lambda_vals)
     [probs_spatial, ~] = ExactGraphSolver(ROWS, COLS, lam, ALPHA);
     results(i, :, 1) = probs_spatial;
     
-    % --- Method 2: Mean-Field Approximation Solver ---
+    % --- Method 2: Macroscopic Approximation Solver ---
     [probs_meanfield, ~] = calculateExactFixation(ROWS, COLS, lam, ALPHA);
     results(i, :, 2) = probs_meanfield;
     
@@ -51,47 +51,106 @@ for i = 1:length(lambda_vals)
 end
 
 %% --- Visualization 1: Probability Curves ---
-fig1 = figure('Color', 'w', 'Position', [100, 400, 1200, 400]);
+% Layout Configuration
+margin_l = 0.08;  % Left margin
+margin_r = 0.02;  % Right margin
+margin_b = 0.15;  % Bottom margin for x-label
+margin_t = 0.12;  % Top margin for title
+gap      = 0.00;  % No gap between plots
+
+% Calculate geometry
+total_w_avail = 1 - margin_l - margin_r;
+sp_width = total_w_avail / ROWS;
+sp_height = 1 - margin_b - margin_t;
+
+% Adjust figure size to ensure subplots are roughly square
+base_height = 500;
+desired_aspect = 1; % Width / Height of one plot
+% (sp_width * FigW) / (sp_height * FigH) = 1
+% FigW = FigH * (sp_height / sp_width)
+fig_width = base_height * (sp_height / sp_width) * 0.9; % Reduced by 15%
+
+fig1 = figure('Color', 'w', 'Position', [100, 400, fig_width, base_height]);
 N_pop = ROWS * COLS;
 
 % Calculate Standard Moran (Well-Mixed, ignoring alpha)
 moran_curve = (1 - 1./lambda_vals) ./ (1 - (1./lambda_vals).^N_pop);
 moran_curve(lambda_vals == 1) = 1 / N_pop;
 
+% Define colors for academic presentation
+color_exact = [0 0.4470 0.7410];      % Standard Blue
+color_mf    = [0.4660 0.6740 0.1880]; % Standard Green
+color_sim   = [0.8500 0.3250 0.0980]; % Standard Orange
+
 for lay = 1:ROWS
-    subplot(1, ROWS, lay);
+    % Calculate exact position [left bottom width height]
+    pos_left = margin_l + (lay-1) * (sp_width + gap);
+    
+    subplot('Position', [pos_left, margin_b, sp_width, sp_height]);
     hold on;
     
     % 1. Exact Spatial (The Truth for Def 2.1)
-    plot(lambda_vals, results(:, lay, 1), 'b-o', 'LineWidth', 2, 'MarkerSize', 4, ...
-        'DisplayName', 'Exact Spatial (Matrix)');
+    % Solid line with filled markers
+    h1 = plot(lambda_vals, results(:, lay, 1), '-o', ...
+        'Color', color_exact, 'LineWidth', 1.5, ...
+        'MarkerSize', 5, 'MarkerFaceColor', color_exact, ...
+        'DisplayName', 'MicSMP (Exact)');
     
-    % 2. Simulation (Should overlay Blue)
-    plot(lambda_vals, results(:, lay, 3), 'rx', 'LineWidth', 1.5, 'MarkerSize', 8, ...
-        'DisplayName', 'Simulation (Monte Carlo)');
+    % 2. Mean Field (Approximation)
+    % Dashed line
+    h2 = plot(lambda_vals, results(:, lay, 2), '--', ...
+        'Color', color_mf, 'LineWidth', 2, ...
+        'DisplayName', 'MacSMM (Approximation)');
         
-    % 3. Mean Field (Approximation)
-    plot(lambda_vals, results(:, lay, 2), 'g--', 'LineWidth', 2, ...
-        'DisplayName', 'Mean-Field (Approximation)');
+    % 3. Simulation (Monte Carlo)
+    % Cross markers, no line (discrete data points)
+    h3 = plot(lambda_vals, results(:, lay, 3), 'x', ...
+        'Color', color_sim, 'LineWidth', 1.5, 'MarkerSize', 7, ...
+        'DisplayName', 'Simulation (Monte Carlo)');
     
-    % 4. Standard Moran Reference
-    plot(lambda_vals, moran_curve, 'k:', 'LineWidth', 1, ...
-        'DisplayName', 'Standard Moran (No structure)');
+    % Calculate MAEs requested for text display
+    mae_mf_exact_lay = mean(abs(results(:, lay, 2) - results(:, lay, 1)));
+    mae_sim_exact_lay = mean(abs(results(:, lay, 3) - results(:, lay, 1)));
     
+    % Display text on the graph
+    txt_str = {sprintf('MAE (MacSMM): %.5f', mae_mf_exact_lay), ...
+               sprintf('MAE (Monte Carlo): %.5f', mae_sim_exact_lay)};
+               
+    % Position text at Top Right, but slightly left to avoid border
+    % Or Top Left is usually safer for fixation curves which start at 0
+    text(0.05, 0.95, txt_str, 'Units', 'normalized', ...
+        'VerticalAlignment', 'top', ...
+        'HorizontalAlignment', 'left', ...
+        'BackgroundColor', [1 1 1 0.8], ...
+        'EdgeColor', 'none', ...
+        'FontSize', 10, 'FontName', 'Arial');
+
     % Styling
-    xlabel('Fitness Advantage (\lambda)');
-    ylabel('Fixation Probability');
-    title(sprintf('Start in Layer %d (Weight \\alpha^%d)', lay, ROWS-lay+1)); % Check alpha logic
+    xlabel('Proliferative advantage (\lambda)', 'FontSize', 10, 'FontWeight', 'bold');
+
+    % Adaptive Y-Axis: Only show label and ticks for the first graph
+    if lay == 1
+        ylabel('Fixation Probability', 'FontSize', 12, 'FontWeight', 'bold');
+    else
+        set(gca, 'YTickLabel', []); % Remove Y-axis tick numbers
+    end
+    
+    title(sprintf('Start Layer %d', lay), 'FontSize', 12, 'FontWeight', 'bold');
+    
     grid on;
+    set(gca, 'Box', 'on', 'LineWidth', 1.2, 'FontSize', 11, 'FontName', 'Arial', ...
+        'GridAlpha', 0.15);
     ylim([-0.05 1.05]); 
+    xlim([min(lambda_vals)-0.1, max(lambda_vals)+0.1]);
     
     if lay == 1
-        legend('Location', 'northwest', 'FontSize', 8);
+        legend([h1, h2, h3], 'Location', 'southeast', 'FontSize', 9);
     end
     
     hold off;
 end
-sgtitle(sprintf('Validation: Fixation Probabilities (R=%d, C=%d, \\alpha=%.0f)', ROWS, COLS, ALPHA));
+sgtitle(sprintf('Fixation Probability Curves: (M=%d, N=%d, \\alpha=%.1f)', ROWS, COLS, ALPHA), ...
+    'FontSize', 15, 'FontWeight', 'bold');
 
 
 %% --- Visualization 2: Residual Analysis (Error vs Simulation) ---
@@ -117,7 +176,7 @@ for lay = 1:ROWS
     
     % Plot Spatial Residuals
     plot(lambda_vals, err_spatial(:, lay), 'b-o', 'LineWidth', 1.5, 'MarkerSize', 4, ...
-        'DisplayName', 'Exact Matrix Residual');
+        'DisplayName', 'Exact Graph Residual');
     
     % Plot Mean Field Residuals
     plot(lambda_vals, err_meanfield(:, lay), 'g--s', 'LineWidth', 1.5, 'MarkerSize', 4, ...
@@ -150,7 +209,7 @@ mae_spatial = mean(abs(err_spatial(:)));
 mae_meanfield = mean(abs(err_meanfield(:)));
 
 fprintf('\n--- Performance Summary ---\n');
-fprintf('Total Squared Error (Exact Matrix): %.6f  (MAE: %.6f)\n', sse_spatial, mae_spatial);
+fprintf('Total Squared Error (Exact Graph): %.6f  (MAE: %.6f)\n', sse_spatial, mae_spatial);
 fprintf('Total Squared Error (Mean Field):   %.6f  (MAE: %.6f)\n', sse_meanfield, mae_meanfield);
 
 if sse_spatial < sse_meanfield

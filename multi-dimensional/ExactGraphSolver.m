@@ -27,10 +27,10 @@ function [fixation_probs, full_solution] = ExactGraphSolver(rows, cols, lambda, 
     % Normalize Pi so it sums to 1
     pi_vector = pi_vector / sum(pi_vector);
     
-    % --- 2. Setup Connectivity W ---
+    % --- 2. Setup Connectivity  M---
     Adj = build_hex_adjacency(rows, cols);
     Degrees = sum(Adj, 2);
-    W = Adj ./ Degrees; % Row stochastic
+    M = Adj ./ Degrees; % Row stochastic
     
     % --- 3. Build Sparse Matrix A ---
     
@@ -83,7 +83,7 @@ function [fixation_probs, full_solution] = ExactGraphSolver(rows, cols, lambda, 
             for i = nbrs'
                 if x(i) ~= x(j)
                     % Rate calculation
-                    w_ij = W(i, j); % Prob i places offspring in j
+                    m_ij = M(i, j); % Prob i places offspring in j
                     
                     if x(i) == 1
                         % Mutant Birth (i=1) -> Replaces WT (j=0) -> Gain
@@ -100,7 +100,7 @@ function [fixation_probs, full_solution] = ExactGraphSolver(rows, cols, lambda, 
                         next_s = s - 2^(j-1);
                     end
                     
-                    rate = p_birth * w_ij;
+                    rate = p_birth * m_ij;
                     
                     if rate > 0
                         % Add -rate to off-diagonal (current, next)
@@ -140,7 +140,7 @@ end
 function Adj = build_hex_adjacency(rows, cols)
     num = rows*cols;
     % Create triplets for sparse matrix accumulation
-    % Estimate max edges: 6 neighbors * num cells
+    % Upper boound of edges: 6 neighbors * num cells
     max_edges = num * 6;
     u_list = zeros(max_edges, 1);
     v_list = zeros(max_edges, 1);
@@ -162,10 +162,6 @@ function Adj = build_hex_adjacency(rows, cols)
             targets = [targets; sub2ind([rows, cols], r, c_right)];
             
             % 2. Vertical Neighbors (Look UP and DOWN)
-            % To explicitly match simulation random walk, we must consider
-            % that a cell can choose neighbors Up-Left, Up-Right, Down-Left, Down-Right.
-            % But in Birth-Death, 'u' reproduces and replaces 'v'.
-            % 'v' must be a physical neighbor.
             
             % Find rows above and below
             r_up = r - 1;

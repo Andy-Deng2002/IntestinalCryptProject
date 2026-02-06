@@ -23,7 +23,8 @@ function [probs, u] = calculateExactFixation(rows, cols, lambda, alpha)
     % --- Weight Definition (Proliferation Potential) ---
     % Row 1 (Bottom) gets highest weight: alpha^rows
     % Row R (Top) gets lowest weight: alpha^1
-    layer_weights = alpha .^ (rows:-1:1); 
+    layer_weights = alpha .^ (rows:-1:1);
+    layer_weights = layer_weights / sum(layer_weights); 
     
     % --- Generate State Space ---
     all_states = generate_states_recursive(rows, N);

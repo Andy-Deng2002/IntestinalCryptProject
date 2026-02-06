@@ -1,6 +1,6 @@
 %% --- Configuration ---
-ROWS  = 3;           % Number of layers
-COLS  = 30;          % Cells per ring
+ROWS  = 6;           % Number of layers
+COLS  = 4;          % Cells per ring
 ALPHA = 10.0;        % Differentiation hierarchy strength
 Mode = 'spatial';    % Simulation mode
 
