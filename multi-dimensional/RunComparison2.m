@@ -29,7 +29,7 @@ for i = 1:length(lambda_vals)
     results(i, :, 1) = probs_spatial;
     
     % --- Method 2: Macroscopic Approximation Solver ---
-    [probs_meanfield, ~] = calculateExactFixation(ROWS, COLS, lam, ALPHA);
+    [probs_meanfield, ~] = MacroApproxSolver(ROWS, COLS, lam, ALPHA);
     results(i, :, 2) = probs_meanfield;
     
     % --- Method 3: Monte Carlo Simulation ---

@@ -23,7 +23,7 @@ for i = 1:length(lambda_vals)
     fprintf('Processing Lambda = %.2f ... ', lam);
     
     % --- 1. Theoretical Exact Solution ---
-    [probs_exact, ~] = calculateExactFixation(ROWS, COLS, lam, ALPHA);
+    [probs_exact, ~] = MacroApproxSolver(ROWS, COLS, lam, ALPHA);
     
     % Store exact results for all layers
     for lay = 1:ROWS
